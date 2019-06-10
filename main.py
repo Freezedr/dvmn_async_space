@@ -4,7 +4,8 @@ import time
 import random
 from math import inf
 
-from curses_tools.curses_tools import draw_frame, read_controls, get_frame_size
+from curses_tools import draw_frame, read_controls, get_frame_size
+from space_garbage import fly_garbage
 
 class EventLoopCommand():
   """
@@ -77,6 +78,9 @@ def draw(canvas):
   coroutines.append(rocket(canvas, MAX_Y / 2, MAX_X / 2))
   coroutines_timeouts.append(0)
 
+  coroutines.append(fly_garbage(canvas, MAX_X / 2, FRAME_3))
+  coroutines_timeouts.append(0)
+
   while True:
     for i, coroutine in enumerate(coroutines):
       if coroutines_timeouts[i] >= 0:
@@ -100,7 +104,10 @@ if __name__ == '__main__':
     FRAME_1 = f.read()
 
   with open('rocket_frames/rocket_frame_2.txt', 'r') as f:
-    FRAME_2 = f.read()      
+    FRAME_2 = f.read()
+
+  with open('trash_frames/trash_large.txt', 'r') as f:
+    FRAME_3 = f.read()
 
   # Размеры кадров совпадают, возьмём только первый
   FRAME_HEIGHT, FRAME_WIDTH = get_frame_size(FRAME_1)
