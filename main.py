@@ -11,24 +11,12 @@ from curses_tools import draw_frame, read_controls, get_frame_size
 from space_garbage import fly_garbage
 
 coroutines = []
-coroutines_timeouts = []
-
-class EventLoopCommand():
-    """
-      Класс асинхронной команды
-    """
-
-    def __await__(self):
-        return (yield self)
 
 
-class Sleep(EventLoopCommand):
-    """
-        Команда "Спать" с произвольным временем
-    """
-
-    def __init__(self, seconds):
-        self.seconds = seconds
+async def sleep(tics=1):
+    iteration_count = int(tics * 10)
+    for _ in range(iteration_count):
+        await asyncio.sleep(0)
 
 
 async def rocket(canvas, row, column):
@@ -64,13 +52,14 @@ async def blink(canvas, row, column, symbol, start_blink_phase):
         for phase in range(PHASES_COUNT):
             current_phase = (phase + start_blink_phase) % PHASES_COUNT
             canvas.addstr(row, column, symbol, LIGHT_MODES[current_phase])
-            await Sleep(BLINK_TIMEOUTS[current_phase])
+            await sleep(BLINK_TIMEOUTS[current_phase])
 
 
 async def fill_orbit_with_garbage(canvas):
     MAX_Y, MAX_X = canvas.getmaxyx()
 
     while True:
+        await sleep(random.randint(0, 25))
         await fly_garbage(
             canvas,
             random.randint(BORDER, MAX_X - BORDER - 1),
@@ -97,26 +86,15 @@ def draw(canvas):
         random.choice('+*.:'),
         random.randint(0, 3)) for _ in range(STARS))
 
-    coroutines_timeouts.extend([0 for _ in range(STARS)])
-
     coroutines.append(rocket(canvas, MAX_Y / 2, MAX_X / 2))
-    coroutines_timeouts.append(0)
-
     coroutines.extend(fill_orbit_with_garbage(canvas) for _ in range(TRASH_AMOUNT))
-    coroutines_timeouts.extend([random.randint(0, 100) for _ in range(TRASH_AMOUNT)])
 
     while True:
         for i, coroutine in enumerate(coroutines):
-            if coroutines_timeouts[i] >= 0:
-                coroutines_timeouts[i] -= 1
-                continue
             try:
-                command = coroutine.send(None)
-                if isinstance(command, Sleep):
-                    coroutines_timeouts[i] = seconds_to_ticks(command.seconds)
+                coroutine.send(None)
             except StopIteration:
                 coroutines.remove(coroutine)
-                coroutines_timeouts[i] = inf
         canvas.refresh()
         time.sleep(TIC_TIMEOUT)
 
