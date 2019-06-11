@@ -2,15 +2,17 @@ import asyncio
 import curses
 import time
 import random
+import itertools
 
 import os
 
-from math import inf
-
 from curses_tools import draw_frame, read_controls, get_frame_size
 from space_garbage import fly_garbage
+from physics import update_speed
 
 coroutines = []
+
+spaceship_frame = ''
 
 
 async def sleep(tics=1):
@@ -19,27 +21,32 @@ async def sleep(tics=1):
         await asyncio.sleep(0)
 
 
-async def rocket(canvas, row, column):
+async def run_spaceship(canvas, row, column):
     """ Анимация ракеты с поддержкой перемещения"""
+    row_speed = column_speed = 0
+    MAX_Y, MAX_X = canvas.getmaxyx()
     while True:
-        rows_direction, columns_direction, space_pressed = read_controls(canvas)
+        draw_frame(canvas, row, column, spaceship_frame, True)
 
-        draw_frame(canvas, row, column, FRAME_2, True)
-        draw_frame(canvas, row, column, FRAME_1)
-        await asyncio.sleep(0)
+        row_acceleration, column_acceleration, space_pressed = read_controls(canvas)
+        row_speed, column_speed = update_speed(row_speed, column_speed, row_acceleration, column_acceleration)
 
-        draw_frame(canvas, row, column, FRAME_1, True)
-        draw_frame(canvas, row, column, FRAME_2)
-        await asyncio.sleep(0)
+        if (BORDER < row + row_speed < MAX_Y - FRAME_HEIGHT - BORDER):
+            row += row_speed
+        if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
+            column += column_speed
 
-        draw_frame(canvas, row, column, FRAME_2, True)
+        draw_frame(canvas, row, column, spaceship_frame)
+        await sleep(0.1)
 
-        MAX_Y, MAX_X = canvas.getmaxyx()
 
-        if (BORDER < row + rows_direction < MAX_Y - FRAME_HEIGHT - BORDER):
-            row += rows_direction
-        if (BORDER < column + columns_direction < MAX_X - FRAME_WIDTH - BORDER):
-            column += columns_direction
+async def animate_spaceship():
+    global spaceship_frame
+
+    frames_cycle = itertools.cycle([FRAME_1, FRAME_2])
+    while True:
+        spaceship_frame = next(frames_cycle)
+        await sleep(0.1)
 
 
 async def blink(canvas, row, column, symbol, start_blink_phase):
@@ -86,7 +93,8 @@ def draw(canvas):
         random.choice('+*.:'),
         random.randint(0, 3)) for _ in range(STARS))
 
-    coroutines.append(rocket(canvas, MAX_Y / 2, MAX_X / 2))
+    coroutines.append(run_spaceship(canvas, MAX_Y / 2, MAX_X / 2))
+    coroutines.append(animate_spaceship())
     coroutines.extend(fill_orbit_with_garbage(canvas) for _ in range(TRASH_AMOUNT))
 
     while True:
