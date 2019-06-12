@@ -9,6 +9,7 @@ import os
 from curses_tools import draw_frame, read_controls, get_frame_size
 from space_garbage import fly_garbage
 from physics import update_speed
+from fire_animation import fire
 
 coroutines = []
 
@@ -35,6 +36,8 @@ async def run_spaceship(canvas, row, column):
             row += row_speed
         if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
             column += column_speed
+        if space_pressed:
+            coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2))
 
         draw_frame(canvas, row, column, spaceship_frame)
         await sleep(0.2)
