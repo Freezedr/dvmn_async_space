@@ -163,7 +163,6 @@ def draw(canvas):
     coroutines.append(run_spaceship(canvas, MAX_Y / 2, MAX_X / 2))
     coroutines.append(animate_spaceship())
     coroutines.append(fill_orbit_with_garbage(canvas))
-    coroutines.append(obs.show_obstacles(canvas, obstacles))
 
     ticks = 0
 
