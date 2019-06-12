@@ -13,7 +13,9 @@ from fire_animation import fire
 import obstacles as obs
 
 coroutines = []
+
 obstacles = []
+obstacles_in_last_collisions = []
 
 spaceship_frame = ''
 
@@ -26,7 +28,7 @@ async def sleep(secs=1):
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
-    global obstacles
+    global obstacles, obstacles_in_last_collisions
     rows_number, columns_number = canvas.getmaxyx()
     height, width = get_frame_size(garbage_frame)
 
@@ -39,6 +41,11 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     obstacles.append(obstacle)
 
     while row < rows_number:
+        if obstacle in obstacles_in_last_collisions:
+            obstacles.remove(obstacle)
+            obstacles_in_last_collisions.remove(obstacle)
+            return
+
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
@@ -62,7 +69,7 @@ async def run_spaceship(canvas, row, column):
         if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
             column += column_speed
         if space_pressed:
-            coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2, obstacles))
+            coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2, obstacles, obstacles_in_last_collisions))
 
         draw_frame(canvas, row, column, spaceship_frame)
         await sleep(0.2)
