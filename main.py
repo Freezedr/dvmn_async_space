@@ -10,6 +10,8 @@ from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
 from fire_animation import fire
 
+import obstacles as obs
+
 coroutines = []
 obstacles = []
 
@@ -24,18 +26,25 @@ async def sleep(secs=1):
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
+    global obstacles
     rows_number, columns_number = canvas.getmaxyx()
+    height, width = get_frame_size(garbage_frame)
 
     column = max(column, 0)
     column = min(column, columns_number - 1)
 
     row = 0
 
+    obstacle = obs.Obstacle(row, column, height, width)
+    obstacles.append(obstacle)
+
     while row < rows_number:
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
         row += speed
+        obstacle.row = row
+    obstacles.remove(obstacle)
 
 
 async def run_spaceship(canvas, row, column):
@@ -115,6 +124,7 @@ def draw(canvas):
     coroutines.append(run_spaceship(canvas, MAX_Y / 2, MAX_X / 2))
     coroutines.append(animate_spaceship())
     coroutines.extend(fill_orbit_with_garbage(canvas) for _ in range(TRASH_AMOUNT))
+    coroutines.append(obs.show_obstacles(canvas, obstacles))
 
     while True:
         for i, coroutine in enumerate(coroutines):
