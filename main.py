@@ -9,6 +9,7 @@ import os
 from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
 from fire_animation import fire
+from explosion import explode
 
 import obstacles as obs
 
@@ -44,6 +45,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
         if obstacle in obstacles_in_last_collisions:
             obstacles.remove(obstacle)
             obstacles_in_last_collisions.remove(obstacle)
+            await explode(canvas, row + height / 2, column + width / 2)
             return
 
         draw_frame(canvas, row, column, garbage_frame)
