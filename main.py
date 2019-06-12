@@ -62,7 +62,7 @@ async def run_spaceship(canvas, row, column):
         if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
             column += column_speed
         if space_pressed:
-            coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2))
+            coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2, obstacles))
 
         draw_frame(canvas, row, column, spaceship_frame)
         await sleep(0.2)
