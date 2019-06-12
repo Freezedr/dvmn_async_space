@@ -15,8 +15,8 @@ coroutines = []
 spaceship_frame = ''
 
 
-async def sleep(tics=1):
-    iteration_count = int(tics * 10)
+async def sleep(secs=1):
+    iteration_count = int(secs * 10)
     for _ in range(iteration_count):
         await asyncio.sleep(0)
 
@@ -37,7 +37,7 @@ async def run_spaceship(canvas, row, column):
             column += column_speed
 
         draw_frame(canvas, row, column, spaceship_frame)
-        await sleep(0.1)
+        await sleep(0.2)
 
 
 async def animate_spaceship():
