@@ -7,11 +7,11 @@ import itertools
 import os
 
 from curses_tools import draw_frame, read_controls, get_frame_size
-from space_garbage import fly_garbage
 from physics import update_speed
 from fire_animation import fire
 
 coroutines = []
+obstacles = []
 
 spaceship_frame = ''
 
@@ -20,6 +20,22 @@ async def sleep(secs=1):
     iteration_count = int(secs * 10)
     for _ in range(iteration_count):
         await asyncio.sleep(0)
+
+
+async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
+    """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
+    rows_number, columns_number = canvas.getmaxyx()
+
+    column = max(column, 0)
+    column = min(column, columns_number - 1)
+
+    row = 0
+
+    while row < rows_number:
+        draw_frame(canvas, row, column, garbage_frame)
+        await asyncio.sleep(0)
+        draw_frame(canvas, row, column, garbage_frame, negative=True)
+        row += speed
 
 
 async def run_spaceship(canvas, row, column):
