@@ -10,6 +10,7 @@ from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
 from fire_animation import fire
 from explosion import explode
+from game_scenario import get_garbage_delay_tics
 
 import obstacles as obs
 
@@ -19,6 +20,8 @@ obstacles = []
 obstacles_in_last_collisions = []
 
 spaceship_frame = ''
+
+year = 1957
 
 
 async def sleep(secs=1.0):
@@ -58,6 +61,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
 async def run_spaceship(canvas, row, column):
     """ Анимация ракеты с поддержкой перемещения"""
+    global year
     row_speed = column_speed = 0
     MAX_Y, MAX_X = canvas.getmaxyx()
     while True:
@@ -75,7 +79,7 @@ async def run_spaceship(canvas, row, column):
             row += row_speed
         if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
             column += column_speed
-        if space_pressed:
+        if space_pressed and year >= 2020:
             coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2, obstacles, obstacles_in_last_collisions))
 
         draw_frame(canvas, row, column, spaceship_frame)
@@ -105,14 +109,19 @@ async def blink(canvas, row, column, symbol, start_blink_phase):
 
 
 async def fill_orbit_with_garbage(canvas):
+    global year
     MAX_Y, MAX_X = canvas.getmaxyx()
 
     while True:
-        await sleep(random.randint(0, 25))
-        await fly_garbage(
-            canvas,
-            random.randint(BORDER, MAX_X - BORDER - 1),
-            TRASH_FRAMES[random.randint(0, len(TRASH_FRAMES) - 1)])
+        delay = get_garbage_delay_tics(year)
+        if delay:
+            await sleep(delay / 10)
+            coroutines.append(fly_garbage(
+                canvas,
+                random.randint(BORDER, MAX_X - BORDER - 1),
+                TRASH_FRAMES[random.randint(0, len(TRASH_FRAMES) - 1)]))
+        else:
+            await sleep(0.1)
 
 
 async def show_gameover(canvas):
@@ -134,13 +143,15 @@ def seconds_to_ticks(seconds):
 
 
 def draw(canvas):
+    global year
     canvas.border()
     curses.curs_set(False)
     canvas.nodelay(True)
 
     MAX_Y, MAX_X = canvas.getmaxyx()
     STARS = 100
-    TRASH_AMOUNT = 20
+
+    game_window = canvas.derwin(MAX_Y - BORDER * 3, MAX_X // 2)
 
     coroutines.extend(blink(
         canvas,
@@ -151,10 +162,19 @@ def draw(canvas):
 
     coroutines.append(run_spaceship(canvas, MAX_Y / 2, MAX_X / 2))
     coroutines.append(animate_spaceship())
-    coroutines.extend(fill_orbit_with_garbage(canvas) for _ in range(TRASH_AMOUNT))
+    coroutines.append(fill_orbit_with_garbage(canvas))
     coroutines.append(obs.show_obstacles(canvas, obstacles))
 
+    ticks = 0
+
     while True:
+        draw_frame(game_window, 1, 1, str(year))
+        game_window.refresh()
+
+        if ticks == seconds_to_ticks(1.5):
+            ticks = 0
+            year += 1
+
         for i, coroutine in enumerate(coroutines):
             try:
                 coroutine.send(None)
@@ -162,6 +182,7 @@ def draw(canvas):
                 coroutines.remove(coroutine)
         canvas.refresh()
         time.sleep(TIC_TIMEOUT)
+        ticks += 1
 
 
 if __name__ == '__main__':
