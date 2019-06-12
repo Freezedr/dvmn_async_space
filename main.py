@@ -21,7 +21,7 @@ obstacles_in_last_collisions = []
 spaceship_frame = ''
 
 
-async def sleep(secs=1):
+async def sleep(secs=1.0):
     iteration_count = int(secs * 10)
     for _ in range(iteration_count):
         await asyncio.sleep(0)
@@ -66,6 +66,11 @@ async def run_spaceship(canvas, row, column):
         row_acceleration, column_acceleration, space_pressed = read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, row_acceleration, column_acceleration)
 
+        for obstacle in obstacles:
+            if obstacle.has_collision(row, column):
+                await show_gameover(canvas)
+                return
+
         if (BORDER < row + row_speed < MAX_Y - FRAME_HEIGHT - BORDER):
             row += row_speed
         if (BORDER < column + column_speed < MAX_X - FRAME_WIDTH - BORDER):
@@ -108,6 +113,20 @@ async def fill_orbit_with_garbage(canvas):
             canvas,
             random.randint(BORDER, MAX_X - BORDER - 1),
             TRASH_FRAMES[random.randint(0, len(TRASH_FRAMES) - 1)])
+
+
+async def show_gameover(canvas):
+    height, width = canvas.getmaxyx()
+
+    GAME_OVER = ''
+
+    with open('rocket_frames/game_over.txt', 'r') as f:
+        GAME_OVER = f.read()
+
+    text_height, text_width = get_frame_size(GAME_OVER)
+    while True:
+        draw_frame(canvas, height / 2 - text_height / 2, width / 2 - text_width / 2, GAME_OVER)
+        await sleep(0.1)
 
 
 def seconds_to_ticks(seconds):
