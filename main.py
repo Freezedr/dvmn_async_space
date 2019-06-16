@@ -65,7 +65,8 @@ async def run_spaceship(canvas, row, column):
     row_speed = column_speed = 0
     MAX_Y, MAX_X = canvas.getmaxyx()
     while True:
-        draw_frame(canvas, row, column, spaceship_frame, True)
+        current_frame, current_row, current_column = spaceship_frame, row, column
+        draw_frame(canvas, row, column, spaceship_frame)
 
         row_acceleration, column_acceleration, space_pressed = read_controls(canvas)
         row_speed, column_speed = update_speed(row_speed, column_speed, row_acceleration, column_acceleration)
@@ -81,9 +82,9 @@ async def run_spaceship(canvas, row, column):
             column += column_speed
         if space_pressed and year >= 2020:
             coroutines.append(fire(canvas, row, column + FRAME_WIDTH / 2, obstacles, obstacles_in_last_collisions))
-
+        await sleep(0.1)
+        draw_frame(canvas, current_row, current_column, current_frame, True)
         draw_frame(canvas, row, column, spaceship_frame)
-        await sleep(0.2)
 
 
 async def animate_spaceship():
